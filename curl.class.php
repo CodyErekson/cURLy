@@ -10,6 +10,9 @@ class Curl {
     private $http_auth_info = null;
     private $agent = null;
     private $port = null; // null = 80/443 by default
+    private $hostname = null;
+
+    public $header_out = false;
 
     public function __construct($hostname, $port = null, $agent = 'cURL wrapper 0.1') {
         $this->set_hostname($hostname);
@@ -27,7 +30,16 @@ class Curl {
     }
 
     public function clear_cookies() {
-        @unlink($this->cookie_file);
+        //@unlink($this->cookie_file); //TODO -- figure out how to clear out cookies eventually
+    }
+
+    public function set_cookie($token) {
+        $this->clear_cookies();
+        $this->cookie_file = '/tmp/.cookies.' . $token;
+    }
+
+    public function delete_cookie($token) {
+        @unlink('/tmp/.cookies.' . $token);
     }
 
     private function get_protocol() {
@@ -98,13 +110,21 @@ class Curl {
         if ($this->use_ssl) {
             curl_setopt($this->curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
             curl_setopt($this->curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+            curl_setopt($this->curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_DEFAULT);
+            curl_setopt($this->curl_handle, CURLOPT_SSL_CIPHER_LIST, 'RC4-SHA:RC4-MD5');
         }
         if ($this->http_auth && $this->http_auth_info != null) {
             curl_setopt($this->curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
             curl_setopt($this->curl_handle, CURLOPT_USERPWD, $this->http_auth_info);
         }
         curl_setopt($this->curl_handle, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($this->curl_handle, CURLOPT_HEADER, 0);
+        if ( $this->header_out ){
+            curl_setopt($this->curl_handle, CURLOPT_HEADER, 1);
+            curl_setopt($this->curl_handle, CURLINFO_HEADER_OUT, 1);
+        } else {
+            curl_setopt($this->curl_handle, CURLOPT_HEADER, 0);
+            curl_setopt($this->curl_handle, CURLINFO_HEADER_OUT, 0);
+        }
         curl_setopt($this->curl_handle, CURLOPT_COOKIEFILE, $this->cookie_file);
         curl_setopt($this->curl_handle, CURLOPT_COOKIEJAR, $this->cookie_file);
         if ($this->agent !== null) {
