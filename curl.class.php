@@ -1,7 +1,7 @@
 <?php
 //General class to handle just about any sort of cURL request
 
-class Curl {
+class Curly {
     private $curl_handle;
     private $server;
     private $cookie_file;
